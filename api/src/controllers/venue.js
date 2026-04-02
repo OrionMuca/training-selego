@@ -10,9 +10,11 @@ const { capture } = require("../services/sentry");
 
 router.post("/search", async (req, res) => {
   try {
-    const { search, city, sort, per_page, page } = req.body;
+    const { search, city, owner_id, sort, per_page, page } = req.body;
 
     let query = {};
+
+    if (owner_id) query.owner_id = String(owner_id);
 
     if (search) {
       const searchValue = search.replace(/[#-.]|[[-^]|[?|{}]/g, "\\$&");
@@ -57,43 +59,6 @@ router.get("/:id", async (req, res) => {
 });
 
 // ============ AUTHENTICATED ROUTES ============
-
-router.post("/my-venues/search", passport.authenticate("user", { session: false }), async (req, res) => {
-  try {
-    const { search, city, sort, per_page, page } = req.body;
-
-    let query = { owner_id: req.user._id.toString() };
-
-    if (search) {
-      const searchValue = search.replace(/[#-.]|[[-^]|[?|{}]/g, "\\$&");
-      query = {
-        ...query,
-        $or: [
-          { name: { $regex: searchValue, $options: "i" } },
-          { address: { $regex: searchValue, $options: "i" } },
-          { city: { $regex: searchValue, $options: "i" } },
-        ],
-      };
-    }
-
-    if (city) query.city = { $regex: city, $options: "i" };
-
-    const limit = per_page || 50;
-    const offset = page ? (page - 1) * limit : 0;
-
-    const data = await VenueObject.find(query)
-      .skip(offset)
-      .limit(limit)
-      .sort(sort || { created_at: -1 });
-
-    const total = await VenueObject.countDocuments(query);
-
-    return res.status(200).send({ ok: true, data, total });
-  } catch (error) {
-    capture(error);
-    res.status(500).send({ ok: false, code: ERROR_CODES.SERVER_ERROR, error });
-  }
-});
 
 router.post("/", passport.authenticate("user", { session: false }), async (req, res) => {
   try {

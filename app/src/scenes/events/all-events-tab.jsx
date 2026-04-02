@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { AiOutlineCalendar, AiOutlineEnvironment, AiOutlineUser } from "react-icons/ai"
+import { AiOutlineCalendar, AiOutlineEnvironment, AiOutlineUser, AiOutlinePlus } from "react-icons/ai"
 import api from "@/services/api"
 import toast from "react-hot-toast"
 import Loader from "@/components/loader"
+import useStore from "@/services/store"
+import CreateEventModal from "@/scenes/events/CreateEventModal"
 
 export default function AllEventsTab() {
+  const { user } = useStore()
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({ search: "", category: "", city: "" })
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [filters, setFilters] = useState({ search: "", category: "", city: "", myEvents: false })
 
   useEffect(() => {
     fetchEvents()
-  }, [])
+  }, [filters.myEvents])
 
   const fetchEvents = async () => {
     try {
@@ -21,10 +25,10 @@ export default function AllEventsTab() {
         search: filters.search,
         category: filters.category,
         city: filters.city,
+        user_id: filters.myEvents ? user?._id : undefined,
         per_page: 20,
         page: 1
       })
-
       if (!ok) throw new Error("Failed to fetch events")
       setEvents(data || [])
     } catch (error) {
@@ -39,41 +43,10 @@ export default function AllEventsTab() {
     fetchEvents()
   }
 
-  if (loading) {
-    return <Loader />
-  }
+  if (loading) return <Loader />
 
   return (
     <div>
-      {/* Info card */}
-      <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">Public Event Search</h3>
-            <div className="mt-2 text-sm text-blue-700">
-              <p>
-                This page displays all <strong>published</strong> events happening in the future.
-              </p>
-              <p className="mt-1">
-                Data comes from <code className="bg-blue-100 px-1 rounded">POST /event/search</code> endpoint.
-              </p>
-              <p className="mt-1">
-                <strong>Public route:</strong> No authentication required - anyone can browse events.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Search and Filters */}
       <form onSubmit={handleSearch} className="mb-6 bg-white p-4 rounded-lg shadow">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -114,9 +87,30 @@ export default function AllEventsTab() {
             />
           </div>
         </div>
-        <button type="submit" className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          Search Events
-        </button>
+        <div className="mt-4 flex items-center justify-between">
+          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={filters.myEvents}
+              onChange={e => setFilters({ ...filters, myEvents: e.target.checked })}
+              className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            My events only
+          </label>
+          <div className="flex items-center gap-3">
+            <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              Search Events
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50"
+            >
+              <AiOutlinePlus className="w-4 h-4" />
+              Create Event
+            </button>
+          </div>
+        </div>
       </form>
 
       {/* Events List */}
@@ -127,11 +121,6 @@ export default function AllEventsTab() {
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No events found</h3>
           <p className="text-gray-600 mb-4">There are no upcoming events matching your criteria.</p>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 max-w-2xl mx-auto">
-            <p className="text-sm text-yellow-800">
-              <strong>💡 Tip:</strong> You can create sample events using the seed script: <code className="bg-yellow-100 px-1 rounded">npm run seed</code> in the API folder.
-            </p>
-          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -140,6 +129,14 @@ export default function AllEventsTab() {
           ))}
         </div>
       )}
+
+      <CreateEventModal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false)
+          fetchEvents()
+        }}
+      />
     </div>
   )
 }
@@ -168,9 +165,7 @@ function EventCard({ event }) {
         <div className="flex items-start justify-between mb-2">
           <span className="inline-block px-2 py-1 text-xs font-semibold text-indigo-600 bg-indigo-100 rounded">{event.category}</span>
           {event.price > 0 ? (
-            <span className="text-sm font-bold text-gray-900">
-              {event.price} {event.currency}
-            </span>
+            <span className="text-sm font-bold text-gray-900">{event.price} {event.currency}</span>
           ) : (
             <span className="text-sm font-bold text-green-600">FREE</span>
           )}
@@ -183,17 +178,13 @@ function EventCard({ event }) {
         <div className="space-y-2 text-sm text-gray-600">
           <div className="flex items-center">
             <AiOutlineCalendar className="w-4 h-4 mr-2" />
-            <span>
-              {formatDate(event.start_date)} at {formatTime(event.start_date)}
-            </span>
+            <span>{formatDate(event.start_date)} at {formatTime(event.start_date)}</span>
           </div>
 
           {event.venue && (
             <div className="flex items-center">
               <AiOutlineEnvironment className="w-4 h-4 mr-2" />
-              <span className="line-clamp-1">
-                {event.venue}, {event.city}
-              </span>
+              <span className="line-clamp-1">{event.venue}, {event.city}</span>
             </div>
           )}
 
@@ -208,9 +199,7 @@ function EventCard({ event }) {
             <div className="mt-2 pt-2 border-t border-gray-200">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-500">Available spots</span>
-                <span className="text-xs font-semibold text-gray-900">
-                  {event.available_spots} / {event.capacity}
-                </span>
+                <span className="text-xs font-semibold text-gray-900">{event.available_spots} / {event.capacity}</span>
               </div>
               <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
                 <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${(event.available_spots / event.capacity) * 100}%` }}></div>

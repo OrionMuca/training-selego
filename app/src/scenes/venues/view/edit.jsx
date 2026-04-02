@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import api from "@/services/api"
 import toast from "react-hot-toast"
+import useStore from "@/services/store"
 
 export default function EditTab({ venue, fetchVenue }) {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useStore()
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
@@ -32,6 +34,21 @@ export default function EditTab({ venue, fetchVenue }) {
   const handleChange = e => {
     const { name, value } = e.target
     setFormData({ ...formData, [name]: value })
+  }
+
+  const isOwner = user && venue.owner_id === user._id
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this venue? This action cannot be undone.")) return
+    try {
+      const { ok } = await api.delete(`/venue/${id}`)
+      if (!ok) throw new Error("Failed to delete venue")
+      toast.success("Venue deleted")
+      navigate("/venues")
+    } catch (error) {
+      toast.error("Failed to delete venue")
+      console.error(error)
+    }
   }
 
   const handleSubmit = async e => {
@@ -161,15 +178,7 @@ export default function EditTab({ venue, fetchVenue }) {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-between items-center pt-4">
-          <button
-            type="button"
-            onClick={() => navigate(`/venues/${id}`)}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            Cancel
-          </button>
+        <div className="flex justify-end pt-4">
           <button
             type="submit"
             disabled={saving}
@@ -179,6 +188,20 @@ export default function EditTab({ venue, fetchVenue }) {
           </button>
         </div>
       </form>
+
+      {isOwner && (
+        <div className="mt-12 border border-red-200 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-red-700 mb-1">Danger Zone</h2>
+          <p className="text-sm text-gray-600 mb-4">Once you delete this venue, there is no going back.</p>
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            Delete this venue
+          </button>
+        </div>
+      )}
     </div>
   )
 }

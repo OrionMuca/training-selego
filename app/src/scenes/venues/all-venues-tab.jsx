@@ -1,18 +1,22 @@
 import React, { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { AiOutlineEnvironment } from "react-icons/ai"
+import { AiOutlineEnvironment, AiOutlinePlus } from "react-icons/ai"
 import api from "@/services/api"
 import toast from "react-hot-toast"
 import Loader from "@/components/loader"
+import useStore from "@/services/store"
+import CreateVenueModal from "@/scenes/venues/CreateVenueModal"
 
 export default function AllVenuesTab() {
+  const { user } = useStore()
   const [venues, setVenues] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({ search: "", city: "" })
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [filters, setFilters] = useState({ search: "", city: "", myVenues: false })
 
   useEffect(() => {
     fetchVenues()
-  }, [])
+  }, [filters.myVenues])
 
   const fetchVenues = async () => {
     try {
@@ -20,6 +24,7 @@ export default function AllVenuesTab() {
       const { ok, data } = await api.post("/venue/search", {
         search: filters.search,
         city: filters.city,
+        owner_id: filters.myVenues ? user?._id : undefined,
         per_page: 20,
         page: 1,
       })
@@ -65,9 +70,30 @@ export default function AllVenuesTab() {
             />
           </div>
         </div>
-        <button type="submit" className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          Search Venues
-        </button>
+        <div className="mt-4 flex items-center justify-between">
+          <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={filters.myVenues}
+              onChange={e => setFilters({ ...filters, myVenues: e.target.checked })}
+              className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            My venues only
+          </label>
+          <div className="flex items-center gap-3">
+            <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              Search Venues
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50"
+            >
+              <AiOutlinePlus className="w-4 h-4" />
+              Create Venue
+            </button>
+          </div>
+        </div>
       </form>
 
       {/* Venues List */}
@@ -86,6 +112,14 @@ export default function AllVenuesTab() {
           ))}
         </div>
       )}
+
+      <CreateVenueModal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false)
+          fetchVenues()
+        }}
+      />
     </div>
   )
 }
