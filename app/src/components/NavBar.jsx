@@ -6,6 +6,7 @@ import { HiOutlineTicket } from "react-icons/hi"
 const MENU = [
   { title: "Mastering the API", to: "/dashboard", logo: <AiOutlineHome className="h-5 w-5" /> },
   { title: "Events", to: "/events", logo: <AiOutlineCalendar className="h-5 w-5" /> },
+  { title: "Venues", to: "/venues", logo: <AiOutlineEnvironment className="h-5 w-5" /> },
   { title: "My Registrations", to: "/my-registrations", logo: <HiOutlineTicket className="h-5 w-5" /> },
 ]
 

@@ -38,6 +38,7 @@ app.use("/user", require("./controllers/user"));
 app.use("/admin", require("./controllers/admin"));
 app.use("/file", require("./controllers/file"));
 app.use("/event", require("./controllers/event"));
+app.use("/venue", require("./controllers/venue"));
 app.use("/attendee", require("./controllers/attendee"));
 app.use("/dummy", require("./controllers/dummy_controller"));
 

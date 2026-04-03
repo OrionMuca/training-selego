@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import api from "@/services/api"
 import toast from "react-hot-toast"
+import useStore from "@/services/store"
 
 export default function EditTab({ event, fetchEvent }) {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { user } = useStore()
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
     title: "",
@@ -86,6 +88,21 @@ export default function EditTab({ event, fetchEvent }) {
       console.error(error)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const isOrganizer = user && event.organizer_id === user._id
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this event? This action cannot be undone.")) return
+    try {
+      const { ok } = await api.delete(`/event/${id}`)
+      if (!ok) throw new Error("Failed to delete event")
+      toast.success("Event deleted")
+      navigate("/events")
+    } catch (error) {
+      toast.error("Failed to delete event")
+      console.error(error)
     }
   }
 
@@ -323,38 +340,41 @@ export default function EditTab({ event, fetchEvent }) {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-between items-center pt-4">
+        <div className="flex justify-end gap-4 pt-4">
           <button
-            type="button"
-            onClick={() => navigate("/my-events")}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            type="submit"
+            disabled={saving}
+            className="px-6 py-2 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
           >
-            Cancel
+            {saving ? "Saving..." : "Save Draft"}
           </button>
 
-          <div className="flex gap-4">
+          {isDraft && (
             <button
-              type="submit"
+              type="button"
+              onClick={handlePublish}
               disabled={saving}
-              className="px-6 py-2 border border-indigo-600 text-indigo-600 rounded-md hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+              className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
-              {saving ? "Saving..." : "Save Draft"}
+              {saving ? "Publishing..." : "Publish Event"}
             </button>
-
-            {isDraft && (
-              <button
-                type="button"
-                onClick={handlePublish}
-                disabled={saving}
-                className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
-              >
-                {saving ? "Publishing..." : "Publish Event"}
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </form>
+
+      {isOrganizer && (
+        <div className="mt-12 border border-red-200 rounded-lg p-6">
+          <h2 className="text-lg font-semibold text-red-700 mb-1">Danger Zone</h2>
+          <p className="text-sm text-gray-600 mb-4">Once you delete this event, there is no going back.</p>
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            Delete this event
+          </button>
+        </div>
+      )}
     </div>
   )
 }
