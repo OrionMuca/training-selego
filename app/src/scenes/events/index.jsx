@@ -1,6 +1,6 @@
 import React from "react"
 import { Routes, Route } from "react-router-dom"
-import AllEventsTab from "./all-events-tab"
+import AllEventsTab from "./list"
 import EventView from "@/scenes/events/view"
 
 export default function Events() {
