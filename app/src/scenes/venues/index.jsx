@@ -1,6 +1,6 @@
 import React from "react"
 import { Routes, Route } from "react-router-dom"
-import AllVenuesTab from "./all-venues-tab"
+import AllVenuesTab from "./list"
 import VenueView from "@/scenes/venues/view"
 
 export default function Venues() {
