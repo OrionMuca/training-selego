@@ -40,6 +40,7 @@ app.use("/file", require("./controllers/file"));
 app.use("/event", require("./controllers/event"));
 app.use("/venue", require("./controllers/venue"));
 app.use("/attendee", require("./controllers/attendee"));
+app.use("/webhook", require("./controllers/webhook"));
 app.use("/dummy", require("./controllers/dummy_controller"));
 
 setupErrorHandler(app);
