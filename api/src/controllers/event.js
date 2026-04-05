@@ -193,9 +193,12 @@ router.post("/", passport.authenticate("user", { session: false }), async (req, 
       organizer_email: req.user.email, // Denormalized for faster queries
     });
 
-    googleCalendar.createEvent(event)
-      .then((data) => data && EventObject.findByIdAndUpdate(event._id, { google_calendar_event_id: data.id }))
-      .catch((err) => capture(err));
+    try {
+      const googleData = await googleCalendar.createEvent(event);
+      if (googleData) await EventObject.findByIdAndUpdate(event._id, { google_calendar_event_id: googleData.id });
+    } catch (err) {
+      capture(err);
+    }
 
     // 📚 201 = Created (new resource was created successfully)
     return res.status(201).send({ ok: true, data: event });
@@ -251,7 +254,11 @@ router.put("/:id", passport.authenticate(["user", "admin"], { session: false }),
     await event.save();
 
     if (event.google_calendar_event_id) {
-      googleCalendar.updateEvent(event.google_calendar_event_id, event).catch((err) => capture(err));
+      try {
+        await googleCalendar.updateEvent(event.google_calendar_event_id, event);
+      } catch (err) {
+        capture(err);
+      }
     }
 
     res.status(200).send({ ok: true, data: event });
