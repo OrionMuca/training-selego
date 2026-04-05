@@ -13,6 +13,11 @@ const S3_SECRETACCESSKEY = process.env.S3_SECRETACCESSKEY || "";
 
 const BREVO_KEY = process.env.BREVO_KEY || "";
 
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "";
+const GOOGLE_REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN || "";
+const GOOGLE_WEBHOOK_TOKEN = process.env.GOOGLE_WEBHOOK_TOKEN || "";
+
 const CONFIG = {
   ENVIRONMENT,
   PORT,
@@ -25,6 +30,10 @@ const CONFIG = {
   S3_ACCESSKEYID,
   S3_SECRETACCESSKEY,
   BREVO_KEY,
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+  GOOGLE_REFRESH_TOKEN,
+  GOOGLE_WEBHOOK_TOKEN,
 };
 
 if (ENVIRONMENT === "development") console.log(CONFIG);

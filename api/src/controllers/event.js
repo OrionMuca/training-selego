@@ -5,6 +5,7 @@ const router = express.Router();
 const EventObject = require("../models/event");
 const ERROR_CODES = require("../utils/errorCodes");
 const { capture } = require("../services/sentry");
+const googleCalendar = require("../services/googleCalendar");
 
 /**
  * 📚 LEARNING NOTE: Controller Organization & Role-Based Access
@@ -192,6 +193,13 @@ router.post("/", passport.authenticate("user", { session: false }), async (req, 
       organizer_email: req.user.email, // Denormalized for faster queries
     });
 
+    try {
+      const googleData = await googleCalendar.createEvent(event);
+      if (googleData) await EventObject.findByIdAndUpdate(event._id, { google_calendar_event_id: googleData.id });
+    } catch (err) {
+      capture(err);
+    }
+
     // 📚 201 = Created (new resource was created successfully)
     return res.status(201).send({ ok: true, data: event });
   } catch (error) {
@@ -244,6 +252,14 @@ router.put("/:id", passport.authenticate(["user", "admin"], { session: false }),
     // 📚 .set() updates the document, .save() persists to DB
     event.set(updates);
     await event.save();
+
+    if (event.google_calendar_event_id) {
+      try {
+        await googleCalendar.updateEvent(event.google_calendar_event_id, event);
+      } catch (err) {
+        capture(err);
+      }
+    }
 
     res.status(200).send({ ok: true, data: event });
   } catch (error) {
