@@ -47,4 +47,5 @@ require("./services/passport")(app);
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
+  require("./cron/eventReminders").start();
 });
